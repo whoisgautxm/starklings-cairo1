@@ -1,9 +1,6 @@
 // starknet6.cairo
 // This code is using Starknet components to make a reusable owner feature.
 // This should add OwnableComponent containing functionality which any contracts can include.
-// But something is fishy here as this component is not working, can you find the error and make the tests pass?
-
-// I AM NOT DONE
 
 use starknet::ContractAddress;
 
@@ -13,6 +10,7 @@ trait IOwnable<TContractState> {
     fn set_owner(ref self: TContractState, new_owner: ContractAddress);
 }
 
+#[starknet::component]
 mod OwnableComponent {
     use starknet::ContractAddress;
     use super::IOwnable;
@@ -20,6 +18,18 @@ mod OwnableComponent {
     #[storage]
     struct Storage {
         owner: ContractAddress,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        OwnershipTransferred: OwnershipTransferred,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct OwnershipTransferred {
+        previous_owner: ContractAddress,
+        new_owner: ContractAddress,
     }
 
     #[embeddable_as(Ownable)]
@@ -30,7 +40,9 @@ mod OwnableComponent {
             self.owner.read()
         }
         fn set_owner(ref self: ComponentState<TContractState>, new_owner: ContractAddress) {
+            let previous_owner = self.owner.read();
             self.owner.write(new_owner);
+            self.emit(OwnershipTransferred { previous_owner, new_owner });
         }
     }
 }
@@ -51,11 +63,17 @@ mod OwnableCounter {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
     }
+
     #[storage]
     struct Storage {
         counter: u128,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, initial_owner: ContractAddress) {
+        self.ownable.owner.write(initial_owner);
     }
 }
 

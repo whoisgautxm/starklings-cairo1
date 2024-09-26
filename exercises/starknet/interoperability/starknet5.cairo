@@ -1,15 +1,8 @@
-// starknet5.cairo
-// Address all the TODOs to make the tests pass!
-// Execute `starklings hint starknet5` or use the `hint` watch subcommand for a hint.
-
-// I AM NOT DONE
-
 #[starknet::interface]
 trait IContractA<TContractState> {
     fn set_value(ref self: TContractState, value: u128) -> bool;
     fn get_value(self: @TContractState) -> u128;
 }
-
 
 #[starknet::contract]
 mod ContractA {
@@ -31,8 +24,13 @@ mod ContractA {
     #[abi(embed_v0)]
     impl ContractAImpl of super::IContractA<ContractState> {
         fn set_value(ref self: ContractState, value: u128) -> bool {
-            // TODO: check if contract_b is enabled.
-            // If it is, set the value and return true. Otherwise, return false.
+            let contract_b = IContractBDispatcher { contract_address: self.contract_b.read() };
+            if contract_b.is_enabled() {
+                self.value.write(value);
+                true
+            } else {
+                false
+            }
         }
 
         fn get_value(self: @ContractState) -> u128 {
@@ -84,7 +82,6 @@ mod test {
     use super::IContractBDispatcher;
     use super::IContractBDispatcherTrait;
 
-
     #[test]
     #[available_gas(30000000)]
     fn test_interoperability() {
@@ -106,7 +103,8 @@ mod test {
         let contract_a = IContractADispatcher { contract_address: address_a };
         let contract_b = IContractBDispatcher { contract_address: address_b };
 
-        //TODO interact with contract_b to make the test pass.
+        // Enable ContractB
+        contract_b.enable();
 
         // Tests
         assert(contract_a.set_value(300) == true, 'Could not set value');
