@@ -1,15 +1,15 @@
 // enums2.cairo
 // Execute `starklings hint enums2` or use the `hint` watch subcommand for a hint.
 
-// I AM NOT DONE
-
 use debug::PrintTrait;
 
-
 #[derive(Copy, Drop)]
-enum Message { // TODO: define the different variants used below
+enum Message {
+    Quit,
+    Echo: felt252,
+    Move: (u32, u32),
+    ChangeColor: (u32, u32, u32),
 }
-
 
 fn main() {
     let mut messages: Array<Message> = ArrayTrait::new();
@@ -49,7 +49,6 @@ fn print_messages_recursive(messages: Array<Message>, index: u32) {
     message.call();
     print_messages_recursive(messages, index + 1)
 }
-
 
 impl MessagePrintImpl of PrintTrait<Message> {
     fn print(self: Message) {
